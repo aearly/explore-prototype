@@ -64,12 +64,14 @@ export class ExplorePage extends LitElement {
         grid-template-columns: 1fr 1fr 1fr;
         grid-auto-rows: 125px;
         background-color: #fff;
+        grid-gap: 2px;
       }
 
       .post-tile {
         overflow: hidden;
         position: relative;
       }
+
       .post-tile-title {
         padding: 4px;
         font-weight: bold;
@@ -95,6 +97,17 @@ export class ExplorePage extends LitElement {
         right: 0;
         bottom: 0;
       }
+
+      .post-tile-large {
+        grid-column-end: span 2;
+        grid-row-end: span 2;
+      }
+      .post-tile-large .post-tile-image {
+        height: 250px;
+      }
+      .post-tile-large .post-tile-title {
+        font-size: 14px;
+      }
     `;
   }
   private async makeQuery() {
@@ -115,13 +128,16 @@ export class ExplorePage extends LitElement {
         ${this.data?.children.map(({data: post}) => {
           const hasImage = !!post.thumbnail;
           const isImage = post.post_hint === 'image';
-          return html`<div class="post-tile">
+          const isLarge = post.title.length > 70;
+          return html`<div
+            class="post-tile ${isLarge ? 'post-tile-large' : ''}"
+          >
             ${hasImage
               ? html`<div
                   class="post-tile-image"
                   style="background-image: url('${isImage
                     ? post.url
-                    : post.thumbnail}')"
+                    : post.preview?.images[0].resolutions[1].url}')"
                 />`
               : ''}
             <h3 class="post-tile-title">${post.title}</h3>
