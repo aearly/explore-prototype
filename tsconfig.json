@@ -6,7 +6,7 @@
     "declaration": false,
     "declarationMap": false,
     "sourceMap": false,
-    "outDir": "./docs/js/",
+    "outDir": "./docs/",
     "rootDir": "./src",
     "strict": true,
     "noUnusedLocals": true,
