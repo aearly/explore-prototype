@@ -1,99 +1,59 @@
 import {LitElement, html, customElement, property, css} from 'lit-element';
-import Cookies from 'js-cookie';
-import {
-  ApolloClient,
-  ApolloLink,
-  concat,
-  gql,
-  HttpLink,
-  InMemoryCache,
-  NormalizedCacheObject,
-} from '@apollo/client';
+
+const TOPICS: Record<string, string> = {
+  gaming:
+    'gaming+halo+PS4+rpg+iosgaming+gamingsuggestions+computers+' +
+    'ShouldIbuythisgame+MechanicalKeyboards+Monitors+hardwareswap+OpTicGaming+' +
+    'DotA2+pcmasterrace+GirlGamers+gamecollecting+IndieGaming+Fallout+Games+' +
+    'nintendo+SuggestALaptop+Steam+Competitiveoverwatch+wow+funny',
+};
+
+interface ListingData {
+  after: string;
+  before: string | null;
+  children: {
+    kind: string;
+    data: {
+      title: string;
+      post_hint: string;
+      url: string;
+      selftext_html: string;
+      author: string;
+      score: number;
+      subreddit: string;
+      preview: {
+        enabled: boolean;
+        images: {
+          resolutions: {
+            height: number;
+            width: number;
+            url: string;
+          }[];
+        }[];
+        source: {url: string};
+      } | null;
+      thumbnail: string;
+    };
+  }[];
+  dist: number;
+  modhash: string;
+}
 
 @customElement('explore-page')
 export class ExplorePage extends LitElement {
-  @property({attribute: true})
+  @property({attribute: true, type: String})
   topic: string;
 
-  _client: ApolloClient<NormalizedCacheObject>;
+  @property({type: Object})
+  data: ListingData | undefined;
 
   constructor() {
     super();
-
-    const httpLink = new HttpLink({
-      uri: 'https://gql.reddit.com',
-      credentials: 'include',
-    });
-    const authMiddleware = new ApolloLink((operation, forward) => {
-      // add the authorization to the headers
-      operation.setContext({
-        headers: {
-          //Authorization: `Bearer ${encodeURIComponent(
-          //  Cookies.get('reddit_session') || ''
-          //)};`,
-          Cookie: `reddit_session=${encodeURIComponent(
-            Cookies.get('reddit_session') || ''
-          )};`,
-        },
-      });
-
-      return forward(operation);
-    });
-    this._client = new ApolloClient<NormalizedCacheObject>({
-      cache: new InMemoryCache(),
-      link: concat(authMiddleware, httpLink),
-    });
     this.topic = 'gaming';
   }
 
-  static query = gql`
-    query TopicBySlug(
-      $topicSlug: String!
-      $includeIdentity: Boolean = false
-      $includeTopic: Boolean = false
-      $includePosts: Boolean = true
-      $includeSubreddits: Boolean = true
-      $includeRelationships: Boolean = true
-      $firstPosts: Int = 30
-      $afterPosts: String
-      $firstSubreddits: Int = 10
-      $afterSubreddits: String
-    ) {
-      identity @include(if: $includeIdentity) {
-        ...identityFragment
-        preferences {
-          ...identityPreferencesFragment
-        }
-      }
-      topicBySlug(slug: $topicSlug) {
-        ...topicFragment @include(if: $includeTopic)
-        posts(first: $firstPosts, after: $afterPosts)
-          @include(if: $includePosts) {
-          ...postConnectionFragment
-        }
-        subreddits(first: $firstSubreddits, after: $afterSubreddits)
-          @include(if: $includeSubreddits) {
-          edges {
-            node {
-              ...subredditFragment
-              ...subredditAboutFragment
-            }
-          }
-        }
-        parentRelationships @include(if: $includeRelationships) {
-          ...topicRelationshipFragment
-        }
-        childRelationships @include(if: $includeRelationships) {
-          ...topicRelationshipFragment
-        }
-        siblingRelationships @include(if: $includeRelationships) {
-          ...topicRelationshipFragment
-        }
-      }
-    }
-  `;
-
   connectedCallback() {
+    super.connectedCallback();
     this.makeQuery();
   }
 
@@ -102,18 +62,73 @@ export class ExplorePage extends LitElement {
       .grid {
         display: grid;
         grid-template-columns: 1fr 1fr 1fr;
-        grid-auto-rows: 1/3;
+        grid-auto-rows: 125px;
+        background-color: #fff;
+      }
+
+      .post-tile {
+        overflow: hidden;
+        position: relative;
+      }
+      .post-tile-title {
+        padding: 4px;
+        font-weight: bold;
+        font-size: 10px;
+        /*text-shadow: 0px 0px 5px rgba(0, 0, 0, 1) ;*/
+        text-overflow: ellipsis;
+        margin: 0;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        box-shadow: 0px 0px 20px 25px rgba(0, 0, 0, 0.5);
+        background-color: rgba(0, 0, 0, 0.5);
+      }
+
+      .post-tile-image {
+        background-repeat: no-repeat;
+        background-size: cover;
+        height: 125px;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
       }
     `;
   }
-  private makeQuery() {
-    this._client.query({
-      query: ExplorePage.query,
-      variables: {topic: this.topic},
-    });
+  private async makeQuery() {
+    const resp = await fetch(
+      `https://www.reddit.com/r/${TOPICS[this.topic]}.json`,
+      {
+        mode: 'cors',
+      }
+    );
+    const body = await resp.json();
+    this.data = body.data;
+    console.log(this.data?.children.map((c) => c.data));
   }
 
   render() {
-    return html` <div class="grid"><h1>Explore</h1></div>`;
+    return html`
+      <div class="grid">
+        ${this.data?.children.map(({data: post}) => {
+          const hasImage = !!post.thumbnail;
+          const isImage = post.post_hint === 'image';
+          return html`<div class="post-tile">
+            ${hasImage
+              ? html`<div
+                  class="post-tile-image"
+                  style="background-image: url('${isImage
+                    ? post.url
+                    : post.thumbnail}')"
+                />`
+              : ''}
+            <h3 class="post-tile-title">${post.title}</h3>
+          </div>`;
+        })}
+        <slot></slot>
+      </div>
+    `;
   }
 }
