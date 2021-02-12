@@ -6,7 +6,7 @@
     "declaration": false,
     "declarationMap": false,
     "sourceMap": false,
-    "outDir": "./docs/",
+    "outDir": "./lib/",
     "rootDir": "./src",
     "strict": true,
     "noUnusedLocals": true,

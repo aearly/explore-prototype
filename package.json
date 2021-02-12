@@ -6,11 +6,12 @@
   "module": "my-element.js",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"npm:build:ts:watch\" \"npm:build:static:watch\" \"npm:serve\"",
+    "dev": "concurrently \"npm:build:ts:watch\" \"npm:build:js:watch\" \"npm:build:static:watch\" \"npm:serve\"",
     "build:ts": "tsc",
     "build:ts:watch": "tsc --watch",
     "build:static": "copy-and-watch dev/**/* docs",
     "build:static:watch": "copy-and-watch --watch dev/**/* docs",
+    "build:js:watch": "rollup -wc",
     "clean": "rimraf my-element.{d.ts,d.ts.map,js,js.map} test/my-element.{d.ts,d.ts.map,js,js.map} test/my-element_test.{d.ts,d.ts.map,js,js.map}",
     "lint": "npm run lint:lit-analyzer && npm run lint:eslint",
     "lint:eslint": "eslint 'src/**/*.ts'",
