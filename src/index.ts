@@ -1,1 +1,1 @@
-import './components/my-element';
+import './components/explore-page';

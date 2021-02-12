@@ -16,9 +16,8 @@ body {
 .phone {
   margin: 20px auto;
   background-color: #000;
-  max-width: 480px;
-  min-height: 800px;
-  height: 1000px;
+  width: 405px;
+  height: 900px;
   border-radius: 40px;
   padding: 80px 20px;
   box-shadow: 0 0 50px 0 #000, inset 5px 5px 5px 0 rgba(255, 255, 255, 0.2);

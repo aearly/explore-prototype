@@ -15,7 +15,10 @@
 import filesize from 'rollup-plugin-filesize';
 import {terser} from 'rollup-plugin-terser';
 import resolve from 'rollup-plugin-node-resolve';
+import commonJs from 'rollup-plugin-commonjs';
 import replace from '@rollup/plugin-replace';
+
+import * as react from 'react';
 
 export default {
   input: 'lib/index.js',
@@ -42,6 +45,11 @@ export default {
     }),
     filesize({
       showBrotliSize: true,
+    }),
+    commonJs({
+      namedExports: {
+        react: Object.keys(react),
+      },
     }),
   ],
 };
