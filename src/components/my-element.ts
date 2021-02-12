@@ -25,7 +25,8 @@ export class MyElement extends LitElement {
   static styles = css`
     :host {
       display: block;
-      border: solid 1px gray;
+      box-shadow: 2px 2px 3px 0 rgba(255, 255, 255, 0.2),
+        -2px -2px 3px 0 rgba(0, 0, 0, 0.2);
       padding: 16px;
       max-width: 800px;
     }

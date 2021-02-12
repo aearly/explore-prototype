@@ -1,1 +1,1 @@
-import './my-element'
+import './components/my-element';

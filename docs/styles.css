@@ -1,0 +1,95 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;700&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'IBM Plex Sans', sans-serif;
+  background-color: #333;
+  color: white;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+.phone {
+  margin: 20px auto;
+  background-color: #000;
+  max-width: 480px;
+  min-height: 800px;
+  height: 1000px;
+  border-radius: 40px;
+  padding: 80px 20px;
+  box-shadow: 0 0 50px 0 #000, inset 5px 5px 5px 0 rgba(255, 255, 255, 0.2);
+  display: flex;
+}
+
+.container {
+  flex: auto;
+  box-shadow: 2px 2px 3px 0 rgba(255, 255, 255, 0.2),
+    -2px -2px 3px 0 rgba(0, 0, 0, 0.2);
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  flex: none;
+  height: 60px;
+  background-color: white;
+  z-index: 1;
+  white-space: nowrap;
+  padding: 12px;
+}
+main {
+  flex: auto;
+  overflow-y: auto;
+}
+footer {
+  flex: none;
+  height: 90px;
+  background-color: white;
+  z-index: 1;
+}
+
+button {
+  display: inline-block;
+  border: none;
+  font-family: inherit;
+  font-weight: bold;
+}
+
+button.pill {
+  padding: 12px 18px;
+  font-size: 12px;
+  background-color: #ebeef0;
+  color: #485b61;
+  border-radius: 100px;
+  margin-right: 8px;
+  cursor: pointer;
+}
+button.pill:active {
+  background-color: #ddd;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  position: relative;
+  right: 3px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.3);
+  border-radius: 5px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  border-radius: 5px;
+  background: rgba(4, 4, 4, 0.5);
+}
+::-webkit-scrollbar-thumb:window-inactive {
+  background: rgba(4, 4, 4, 0.1);
+}
