@@ -39,16 +39,21 @@ header {
   z-index: 1;
   white-space: nowrap;
   padding: 12px;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, 0.1);
 }
 main {
   flex: auto;
   overflow-y: auto;
 }
 footer {
+  color: black;
+  text-align: center;
+  padding: 16px;
   flex: none;
   height: 90px;
   background-color: white;
   z-index: 1;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, 0.1);
 }
 
 button {

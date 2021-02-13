@@ -25,6 +25,7 @@ export default {
   output: {
     file: 'docs/main.js',
     format: 'esm',
+    sourcemap: 'inline',
   },
   onwarn(warning) {
     if (warning.code !== 'THIS_IS_UNDEFINED') {

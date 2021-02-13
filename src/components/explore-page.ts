@@ -1,4 +1,5 @@
 import {LitElement, html, customElement, property, css} from 'lit-element';
+import {unsafeHTML} from 'lit-html/directives/unsafe-html';
 
 const TOPICS: Record<string, string> = {
   gaming:
@@ -6,34 +7,50 @@ const TOPICS: Record<string, string> = {
     'ShouldIbuythisgame+MechanicalKeyboards+Monitors+hardwareswap+OpTicGaming+' +
     'DotA2+pcmasterrace+GirlGamers+gamecollecting+IndieGaming+Fallout+Games+' +
     'nintendo+SuggestALaptop+Steam+Competitiveoverwatch+wow+funny',
+  music:
+    '"Music+Vaporwave+Guitar+MusicEd+WeAreTheMusicMakers+indieheads+Metal+' +
+    'LetsTalkMusic+DeepIntoYouTube+musictheory+Metalcore+CasualConversation+' +
+    'ListeningHeads+AskReddit+woahdude+composer+poppunkers+anime+' +
+    'ThisIsOurMusic+unpopularopinion+AdviceAnimals+BABYMETAL+gaming+EDM+technology"',
+  sports:
+    'sports+soccer+todayilearned+starcraft+baseball+esports+reddevils+AskReddit+' +
+    'nfl+CFB+nba+hockey+leagueoflegends+ABraThatFits+funny+formula1+MMA+' +
+    'Patriots+gaming+cordcutters+dogecoin+granturismo+Showerthoughts+unpopularopinion+MLS',
+  beauty:
+    'beauty+AsianBeauty+OldSchoolCool+funny+MUAontheCheap+makeupexchange+' +
+    'KoreanBeauty+pics+Porsche+RandomActsofMakeup+MakeupAddiction+disney+' +
+    'BeautyAddiction+BeautyBoxes+AskWomen+succulents+BeautyGuruChatter+' +
+    'beautytalkph+houseplants+aww+ShinyPokemon+cats+gardening+FreeKarma4U+gaming',
 };
+
+interface Post {
+  title: string;
+  post_hint: string;
+  url: string;
+  selftext_html: string;
+  author: string;
+  score: number;
+  subreddit: string;
+  preview: {
+    enabled: boolean;
+    images: {
+      resolutions: {
+        height: number;
+        width: number;
+        url: string;
+      }[];
+    }[];
+    source: {url: string};
+  } | null;
+  thumbnail: string;
+}
 
 interface ListingData {
   after: string;
   before: string | null;
   children: {
     kind: string;
-    data: {
-      title: string;
-      post_hint: string;
-      url: string;
-      selftext_html: string;
-      author: string;
-      score: number;
-      subreddit: string;
-      preview: {
-        enabled: boolean;
-        images: {
-          resolutions: {
-            height: number;
-            width: number;
-            url: string;
-          }[];
-        }[];
-        source: {url: string};
-      } | null;
-      thumbnail: string;
-    };
+    data: Post;
   }[];
   dist: number;
   modhash: string;
@@ -44,7 +61,7 @@ export class ExplorePage extends LitElement {
   @property({attribute: true, type: String})
   topic: string;
 
-  @property({type: Object})
+  @property({attribute: true, type: Object})
   data: ListingData | undefined;
 
   constructor() {
@@ -65,6 +82,7 @@ export class ExplorePage extends LitElement {
         grid-auto-rows: 125px;
         background-color: #fff;
         grid-gap: 2px;
+        grid-auto-flow: dense;
       }
 
       .post-tile {
@@ -90,6 +108,7 @@ export class ExplorePage extends LitElement {
       .post-tile-image {
         background-repeat: no-repeat;
         background-size: cover;
+        background-position: top center;
         height: 125px;
         position: absolute;
         top: 0;
@@ -103,14 +122,25 @@ export class ExplorePage extends LitElement {
         grid-row-end: span 2;
       }
       .post-tile-large .post-tile-image {
-        height: 250px;
+        height: 252px;
       }
       .post-tile-large .post-tile-title {
         font-size: 14px;
       }
     `;
   }
+
+  attributeChangedCallback(name: string, old: unknown, current: unknown) {
+    console.log(arguments);
+    if (name === 'topic' && old !== current) {
+      this.topic = current as string;
+      this.makeQuery();
+    }
+  }
+
   private async makeQuery() {
+    this.data = undefined;
+    console.log(this.topic);
     const resp = await fetch(
       `https://www.reddit.com/r/${TOPICS[this.topic]}.json`,
       {
@@ -129,16 +159,16 @@ export class ExplorePage extends LitElement {
           const hasImage = !!post.thumbnail;
           const isImage = post.post_hint === 'image';
           const isLarge = post.title.length > 70;
+          const imgStyles = {
+            backgroundImage: `url('${getImageUrl(post, isImage, isLarge)}')`,
+          };
           return html`<div
             class="post-tile ${isLarge ? 'post-tile-large' : ''}"
           >
             ${hasImage
-              ? html`<div
-                  class="post-tile-image"
-                  style="background-image: url('${isImage
-                    ? post.url
-                    : post.preview?.images[0].resolutions[1].url}')"
-                />`
+              ? unsafeHTML(
+                  `<div class="post-tile-image" style="background-image: ${imgStyles.backgroundImage}" />`
+                )
               : ''}
             <h3 class="post-tile-title">${post.title}</h3>
           </div>`;
@@ -147,4 +177,14 @@ export class ExplorePage extends LitElement {
       </div>
     `;
   }
+}
+
+function getImageUrl(post: Post, isImage: boolean, isLarge: boolean) {
+  if (isImage) return post.url;
+  const previews = post.preview?.images[0].resolutions ?? null;
+  if (!previews) return '';
+  const resolution = isLarge
+    ? previews[2] ?? previews[1] ?? previews[0]
+    : previews[1] ?? previews[0];
+  return resolution.url;
 }
