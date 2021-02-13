@@ -1,5 +1,6 @@
 import {LitElement, html, customElement, property, css} from 'lit-element';
 import {unsafeHTML} from 'lit-html/directives/unsafe-html';
+import {classMap} from 'lit-html/directives/class-map';
 
 const TOPICS: Record<string, string> = {
   gaming:
@@ -27,6 +28,7 @@ interface Post {
   title: string;
   post_hint: string;
   url: string;
+  selftext: string;
   selftext_html: string;
   author: string;
   score: number;
@@ -90,7 +92,7 @@ export class ExplorePage extends LitElement {
         position: relative;
       }
 
-      .post-tile-title {
+      .post-tile-text {
         padding: 4px;
         font-weight: bold;
         font-size: 10px;
@@ -101,8 +103,12 @@ export class ExplorePage extends LitElement {
         top: 0;
         left: 0;
         right: 0;
-        box-shadow: 0px 0px 20px 25px rgba(0, 0, 0, 0.5);
-        background-color: rgba(0, 0, 0, 0.5);
+        box-shadow: 0px 0px 20px 25px rgba(0, 0, 0, 0.3);
+        background-color: rgba(0, 0, 0, 0.3);
+      }
+      .post-text-only .post-tile-text {
+        box-shadow: unset;
+        background-color: transparent;
       }
 
       .post-tile-image {
@@ -116,6 +122,50 @@ export class ExplorePage extends LitElement {
         right: 0;
         bottom: 0;
       }
+      .post-text-only .post-tile-gradient {
+        background-image: linear-gradient(
+          97.51deg,
+          #ff4400 -7.08%,
+          #ffb330 116.57%
+        );
+      }
+
+      .post-tile:nth-child(3n).post-text-only .post-tile-gradient {
+        background-image: linear-gradient(89.94deg, #c274f0 0%, #f14fb0 100%);
+      }
+      .post-tile:nth-child(3n + 2).post-text-only .post-tile-gradient {
+        background: linear-gradient(
+          89.94deg,
+          #51b9ff 0%,
+          #7785ff 52.6%,
+          #b279ff 73.96%,
+          #ff81ed 100%
+        );
+      }
+      .post-text-only .post-tile-text {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        font-size: 12px;
+      }
+
+      .post-text-only .post-tile-text .post-tile-title {
+        background: white;
+        color: black;
+        mix-blend-mode: screen;
+      }
+
+      .post-tile-title {
+        margin: 0;
+      }
+
+      .post-tile-body {
+        color: black;
+        margin-top: 8px;
+        font-weight: normal;
+      }
 
       .post-tile-large {
         grid-column-end: span 2;
@@ -124,8 +174,9 @@ export class ExplorePage extends LitElement {
       .post-tile-large .post-tile-image {
         height: 252px;
       }
-      .post-tile-large .post-tile-title {
-        font-size: 14px;
+      .post-tile-large .post-tile-text {
+        padding: 16px;
+        font-size: 16px;
       }
     `;
   }
@@ -156,21 +207,36 @@ export class ExplorePage extends LitElement {
     return html`
       <div class="grid">
         ${this.data?.children.map(({data: post}) => {
-          const hasImage = !!post.thumbnail;
+          //const hasImage = !!post.thumbnail;
           const isImage = post.post_hint === 'image';
-          const isLarge = post.title.length > 70;
+          const isLarge = post.title.length > 90;
+          const text = post.selftext;
+          const imgUrl = getImageUrl(post, isImage, isLarge);
           const imgStyles = {
-            backgroundImage: `url('${getImageUrl(post, isImage, isLarge)}')`,
+            backgroundImage: `url('${imgUrl}')`,
           };
           return html`<div
-            class="post-tile ${isLarge ? 'post-tile-large' : ''}"
+            class=${classMap({
+              'post-tile': true,
+              'post-tile-large': isLarge,
+              'post-text-only': !imgUrl,
+            })}
           >
-            ${hasImage
+            ${imgUrl
               ? unsafeHTML(
                   `<div class="post-tile-image" style="background-image: ${imgStyles.backgroundImage}" />`
                 )
               : ''}
-            <h3 class="post-tile-title">${post.title}</h3>
+            <div class="post-tile-text">
+              <div class="post-tile-gradient">
+                <h3 class="post-tile-title">${post.title}</h3>
+              </div>
+              ${text?.length
+                ? html`<div class="post-tile-body">
+                    ${text.slice(0, 200)}${text.length > 200 ? '...' : ''}
+                  </div>`
+                : ''}
+            </div>
           </div>`;
         })}
         <slot></slot>
