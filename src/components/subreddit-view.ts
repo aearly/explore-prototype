@@ -46,6 +46,12 @@ export class SubredditView extends LitElement {
         color: black;
       }
 
+      .post {
+        display: block;
+        text-decoration: none;
+        color: inherit;
+      }
+
       .post-top {
         display: flex;
         flex-direction: row;
@@ -125,7 +131,11 @@ export class SubredditView extends LitElement {
           const post: Post = c.data;
           const isImage = post.post_hint === 'image';
           const imgUrl = getImageUrl(post, isImage, true);
-          return html`<div class="post">
+          return html`<a
+            class="post"
+            target="_blank"
+            href="https://reddit.com/${post.id}"
+          >
             <div class="post-top">
               <img class="sr-icon" />
               <div class="sr">
@@ -147,7 +157,7 @@ export class SubredditView extends LitElement {
             <div class="post-bottom">
               <img src="fake-post-meta.png" />
             </div>
-          </div>`;
+          </a>`;
         })}
     </div>`;
   }
