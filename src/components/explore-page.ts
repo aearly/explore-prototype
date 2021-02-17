@@ -1,6 +1,8 @@
 import {LitElement, html, customElement, property, css} from 'lit-element';
 import {unsafeHTML} from 'lit-html/directives/unsafe-html';
 import {classMap} from 'lit-html/directives/class-map';
+import {ListingData, Post} from './types';
+import './subreddit-view';
 
 const TOPICS: Record<string, string> = {
   gaming:
@@ -24,51 +26,19 @@ const TOPICS: Record<string, string> = {
     'beautytalkph+houseplants+aww+ShinyPokemon+cats+gardening+FreeKarma4U+gaming',
 };
 
-interface Post {
-  title: string;
-  post_hint: string;
-  url: string;
-  selftext: string;
-  selftext_html: string;
-  author: string;
-  score: number;
-  subreddit: string;
-  preview: {
-    enabled: boolean;
-    images: {
-      resolutions: {
-        height: number;
-        width: number;
-        url: string;
-      }[];
-    }[];
-    source: {url: string};
-  } | null;
-  thumbnail: string;
-}
-
-interface ListingData {
-  after: string;
-  before: string | null;
-  children: {
-    kind: string;
-    data: Post;
-  }[];
-  dist: number;
-  modhash: string;
-}
-
 @customElement('explore-page')
 export class ExplorePage extends LitElement {
   @property({attribute: true, type: String})
-  topic: string;
+  topic: string | undefined;
+
+  @property({attribute: true, type: String})
+  subreddit: string | undefined;
 
   @property({attribute: true, type: Object})
   data: ListingData | undefined;
 
   constructor() {
     super();
-    this.topic = 'gaming';
   }
 
   connectedCallback() {
@@ -90,6 +60,7 @@ export class ExplorePage extends LitElement {
       .post-tile {
         overflow: hidden;
         position: relative;
+        cursor: pointer;
       }
 
       .post-tile-text {
@@ -105,6 +76,8 @@ export class ExplorePage extends LitElement {
         right: 0;
         box-shadow: 0px 0px 20px 25px rgba(0, 0, 0, 0.3);
         background-color: rgba(0, 0, 0, 0.3);
+
+        display: none;
       }
       .post-text-only .post-tile-text {
         box-shadow: unset;
@@ -149,6 +122,7 @@ export class ExplorePage extends LitElement {
         right: 0;
         bottom: 0;
         font-size: 12px;
+        display: block;
       }
 
       .post-text-only .post-tile-text .post-tile-title {
@@ -181,15 +155,22 @@ export class ExplorePage extends LitElement {
     `;
   }
 
+  onTileClick(subreddit: string) {
+    this.subreddit = subreddit;
+    this.topic = undefined;
+  }
+
   attributeChangedCallback(name: string, old: unknown, current: unknown) {
     console.log(arguments);
     if (name === 'topic' && old !== current) {
       this.topic = current as string;
+      this.subreddit = undefined;
       this.makeQuery();
     }
   }
 
   private async makeQuery() {
+    if (!this.topic) return;
     this.data = undefined;
     console.log(this.topic);
     const resp = await fetch(
@@ -204,48 +185,57 @@ export class ExplorePage extends LitElement {
   }
 
   render() {
+    if (this.subreddit) {
+      return html`<subreddit-view
+        subreddit=${this.subreddit}
+      ></subreddit-view>`;
+    }
     return html`
       <div class="grid">
-        ${this.data?.children.map(({data: post}) => {
-          //const hasImage = !!post.thumbnail;
-          const isImage = post.post_hint === 'image';
-          const isLarge = post.title.length > 90;
-          const text = post.selftext;
-          const imgUrl = getImageUrl(post, isImage, isLarge);
-          const imgStyles = {
-            backgroundImage: `url('${imgUrl}')`,
-          };
-          return html`<div
-            class=${classMap({
-              'post-tile': true,
-              'post-tile-large': isLarge,
-              'post-text-only': !imgUrl,
-            })}
-          >
-            ${imgUrl
-              ? unsafeHTML(
-                  `<div class="post-tile-image" style="background-image: ${imgStyles.backgroundImage}" />`
-                )
-              : ''}
-            <div class="post-tile-text">
-              <div class="post-tile-gradient">
-                <h3 class="post-tile-title">${post.title}</h3>
-              </div>
-              ${text?.length
-                ? html`<div class="post-tile-body">
-                    ${text.slice(0, 200)}${text.length > 200 ? '...' : ''}
-                  </div>`
-                : ''}
-            </div>
-          </div>`;
-        })}
-        <slot></slot>
+        ${this._renderTiles()}
       </div>
     `;
   }
+
+  _renderTiles() {
+    return this.data?.children.map(({data: post}) => {
+      //const hasImage = !!post.thumbnail;
+      const isImage = post.post_hint === 'image';
+      const isLarge = post.title.length > 90;
+      const text = post.selftext;
+      const imgUrl = getImageUrl(post, isImage, isLarge);
+      const imgStyles = {
+        backgroundImage: `url('${imgUrl}')`,
+      };
+      return html`<div
+        @click=${() => this.onTileClick(post.subreddit)}
+        class=${classMap({
+          'post-tile': true,
+          'post-tile-large': isLarge,
+          'post-text-only': !imgUrl,
+        })}
+      >
+        ${imgUrl
+          ? unsafeHTML(
+              `<div class="post-tile-image" style="background-image: ${imgStyles.backgroundImage}" />`
+            )
+          : ''}
+        <div class="post-tile-text">
+          <div class="post-tile-gradient">
+            <h3 class="post-tile-title">${post.title}</h3>
+          </div>
+          ${text?.length
+            ? html`<div class="post-tile-body">
+                ${text.slice(0, 200)}${text.length > 200 ? '...' : ''}
+              </div>`
+            : ''}
+        </div>
+      </div>`;
+    });
+  }
 }
 
-function getImageUrl(post: Post, isImage: boolean, isLarge: boolean) {
+export function getImageUrl(post: Post, isImage: boolean, isLarge: boolean) {
   if (isImage) return post.url;
   const previews = post.preview?.images[0].resolutions ?? null;
   if (!previews) return '';

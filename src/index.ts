@@ -1,4 +1,5 @@
 import './components/explore-page';
+import './components/subreddit-view';
 import {ExplorePage} from './components/explore-page';
 
 async function main() {
