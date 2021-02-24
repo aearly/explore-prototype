@@ -1,4 +1,5 @@
 export interface Post {
+  id: string;
   title: string;
   post_hint: string;
   url: string;
@@ -10,17 +11,20 @@ export interface Post {
   preview: {
     enabled: boolean;
     images: {
-      resolutions: {
-        height: number;
-        width: number;
-        url: string;
-      }[];
+      source: PreviewImage;
+      resolutions: PreviewImage[];
     }[];
     source: {url: string};
   } | null;
   thumbnail: string;
   pinned: boolean;
   stickied: boolean;
+}
+
+export interface PreviewImage {
+  height: number;
+  width: number;
+  url: string;
 }
 
 export interface ListingData {

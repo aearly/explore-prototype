@@ -1,7 +1,7 @@
 import {LitElement, html, customElement, property, css} from 'lit-element';
 import {unsafeHTML} from 'lit-html/directives/unsafe-html';
 import {classMap} from 'lit-html/directives/class-map';
-import {ListingData, Post} from './types';
+import {ListingData, Post, PreviewImage} from './types';
 import './subreddit-view';
 
 const TOPICS: Record<string, string> = {
@@ -26,6 +26,8 @@ const TOPICS: Record<string, string> = {
     'beautytalkph+houseplants+aww+ShinyPokemon+cats+gardening+FreeKarma4U+gaming',
 };
 
+const RATIO_THRESHOLD = 1.5;
+
 @customElement('explore-page')
 export class ExplorePage extends LitElement {
   @property({attribute: true, type: String})
@@ -37,8 +39,20 @@ export class ExplorePage extends LitElement {
   @property({attribute: true, type: Object})
   data: ListingData | undefined;
 
+  @property({attribute: true, type: Boolean})
+  showTitle: boolean;
+
+  @property({attribute: true, type: Boolean})
+  showSubreddit: boolean;
+
+  @property({attribute: true, type: Boolean})
+  showShim: boolean;
+
   constructor() {
     super();
+    this.showTitle = false;
+    this.showSubreddit = false;
+    this.showShim = false;
   }
 
   connectedCallback() {
@@ -48,12 +62,16 @@ export class ExplorePage extends LitElement {
 
   static get styles() {
     return css`
+      :host {
+        --tile-size: 156px;
+      }
       .grid {
         display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        grid-auto-rows: 125px;
+        grid-template-columns: 1fr 1fr;
+        grid-auto-rows: calc(var(--tile-size) + 16px);
         background-color: #fff;
-        grid-gap: 2px;
+        padding: 8px;
+        /* grid-gap: 16px; */
         grid-auto-flow: dense;
       }
 
@@ -61,6 +79,8 @@ export class ExplorePage extends LitElement {
         overflow: hidden;
         position: relative;
         cursor: pointer;
+        border-radius: 16px;
+        margin: 8px;
       }
 
       .post-tile-text {
@@ -88,7 +108,7 @@ export class ExplorePage extends LitElement {
         background-repeat: no-repeat;
         background-size: cover;
         background-position: top center;
-        height: 125px;
+        height: var(--tile-size);
         position: absolute;
         top: 0;
         left: 0;
@@ -141,12 +161,23 @@ export class ExplorePage extends LitElement {
         font-weight: normal;
       }
 
+      .post-tile-wide {
+        grid-column-end: span 2;
+        grid-row-end: span 1;
+      }
+      .post-tile-tall {
+        grid-column-end: span 1;
+        grid-row-end: span 2;
+      }
+      .post-tile-tall .post-tile-image {
+        height: calc(var(--tile-size) * 2 + 16px);
+      }
       .post-tile-large {
         grid-column-end: span 2;
         grid-row-end: span 2;
       }
       .post-tile-large .post-tile-image {
-        height: 252px;
+        height: calc(var(--tile-size) * 2 + 16px);
       }
       .post-tile-large .post-tile-text {
         padding: 16px;
@@ -199,48 +230,98 @@ export class ExplorePage extends LitElement {
 
   _renderTiles() {
     return this.data?.children.map(({data: post}) => {
-      //const hasImage = !!post.thumbnail;
-      const isImage = post.post_hint === 'image';
       const isLarge = post.title.length > 90;
-      const text = post.selftext;
-      const imgUrl = getImageUrl(post, isImage, isLarge);
-      const imgStyles = {
-        backgroundImage: `url('${imgUrl}')`,
-      };
-      return html`<div
-        @click=${() => this.onTileClick(post.subreddit)}
-        class=${classMap({
-          'post-tile': true,
-          'post-tile-large': isLarge,
-          'post-text-only': !imgUrl,
-        })}
-      >
-        ${imgUrl
-          ? unsafeHTML(
-              `<div class="post-tile-image" style="background-image: ${imgStyles.backgroundImage}" />`
-            )
-          : ''}
-        <div class="post-tile-text">
-          <div class="post-tile-gradient">
-            <h3 class="post-tile-title">${post.title}</h3>
-          </div>
-          ${text?.length
-            ? html`<div class="post-tile-body">
-                ${text.slice(0, 200)}${text.length > 200 ? '...' : ''}
-              </div>`
-            : ''}
-        </div>
-      </div>`;
+      const imgUrl = getImageUrl(post, isLarge);
+      const isMedia = !!imgUrl;
+
+      if (isMedia) return this._renderMedia(post);
+      return this._renderText(post);
     });
+  }
+  _renderMedia(post: Post) {
+    const text = post.selftext;
+    const isLarge = post.title.length > 90;
+    const imgUrl = getImageUrl(post, isLarge);
+    const imgStyles = {
+      backgroundImage: `url('${imgUrl}')`,
+    };
+
+    const ratio = getAspectRatio(post);
+
+    return html`<div
+      @click=${() => this.onTileClick(post.subreddit)}
+      class=${classMap({
+        'post-tile': true,
+        'post-tile-wide': !isLarge && ratio >= RATIO_THRESHOLD,
+        'post-tile-tall': !isLarge && ratio <= 1 / RATIO_THRESHOLD,
+        'post-tile-large': isLarge,
+      })}
+    >
+      ${imgUrl
+        ? unsafeHTML(
+            `<div class="post-tile-image" style="background-image: ${imgStyles.backgroundImage}" />`
+          )
+        : ''}
+      <div class="post-tile-text">
+        <div class="post-tile-gradient">
+          <h3 class="post-tile-title">${post.title}</h3>
+        </div>
+        ${text?.length
+          ? html`<div class="post-tile-body">
+              ${text.slice(0, 200)}${text.length > 200 ? '...' : ''}
+            </div>`
+          : ''}
+      </div>
+    </div>`;
+  }
+
+  _renderText(post: Post) {
+    const isLarge = post.title.length > 90;
+    const text = post.selftext;
+    return html`<div
+      @click=${() => this.onTileClick(post.subreddit)}
+      class=${classMap({
+        'post-tile': true,
+        'post-tile-large': isLarge,
+        'post-text-only': true,
+      })}
+    >
+      <div class="post-tile-text">
+        <div class="post-tile-gradient">
+          <h3 class="post-tile-title">${post.title}</h3>
+        </div>
+        ${text?.length
+          ? html`<div class="post-tile-body">
+              ${text.slice(0, 200)}${text.length > 200 ? '...' : ''}
+            </div>`
+          : ''}
+      </div>
+    </div>`;
   }
 }
 
-export function getImageUrl(post: Post, isImage: boolean, isLarge: boolean) {
+function getAspectRatio(post: Post) {
+  const image = getPreview(post);
+  if (!image) return 1;
+  return image.width / image.height;
+}
+
+export function getImageUrl(post: Post, isLarge = false) {
+  const isImage = post.post_hint === 'image';
   if (isImage) return post.url;
-  const previews = post.preview?.images[0].resolutions ?? null;
-  if (!previews) return '';
-  const resolution = isLarge
+  return getPreview(post, isLarge)?.url ?? '';
+}
+
+function getPreview(post: Post, isLarge = false): PreviewImage | undefined {
+  const isImage = post.post_hint === 'image';
+  if (isImage) return post.preview?.images[0].source;
+
+  const previews = post.preview?.images[0].resolutions;
+  if (!previews) return;
+
+  return post.preview?.images[0].source;
+  /* const resolution = isLarge
     ? previews[2] ?? previews[1] ?? previews[0]
     : previews[1] ?? previews[0];
-  return resolution.url;
+  return resolution; */
 }
