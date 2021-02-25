@@ -246,18 +246,20 @@ export class ExplorePage extends LitElement {
 
   onTileClick(subreddit: string) {
     this.subreddit = subreddit;
-    this.topic = undefined;
+    this.setAttribute('topic', '');
   }
 
   attributeChangedCallback(name: string, old: unknown, current: unknown) {
     console.log(arguments);
     if (name === 'topic' && old !== current) {
       this.topic = current as string;
-      this.subreddit = undefined;
-      this.makeQuery();
+      if (this.topic) {
+        this.subreddit = undefined;
+        this.makeQuery();
+      }
       return;
     }
-    this[name] = current === 'true';
+    if (name.includes('show')) this[name] = current === 'true';
   }
 
   private async makeQuery() {
