@@ -34,7 +34,6 @@
   "author": "The Polymer Authors",
   "license": "BSD-3-Clause",
   "dependencies": {
-    "@apollo/client": "^3.3.9",
     "lit-element": "^2.3.1"
   },
   "devDependencies": {
@@ -44,7 +43,6 @@
     "@types/chai": "^4.2.11",
     "@types/js-cookie": "^2.2.6",
     "@types/mocha": "^7.0.2",
-    "@types/react": "^17.0.1",
     "@typescript-eslint/eslint-plugin": "^2.27.0",
     "@typescript-eslint/parser": "^2.27.0",
     "chai": "^4.2.0",
@@ -60,7 +58,6 @@
     "lit-analyzer": "^1.1.10",
     "mocha": "^7.1.1",
     "prettier": "^2.0.4",
-    "react": "^17.0.1",
     "rimraf": "^3.0.2",
     "rollup": "^1.32.1",
     "rollup-plugin-commonjs": "^10.1.0",

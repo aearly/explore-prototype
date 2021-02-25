@@ -210,7 +210,6 @@ export class ExplorePage extends LitElement {
         margin: 0;
         flex: none;
         vertical-align: bottom;
-        align-self: flex-end;
       }
 
       .post-tile-body {
@@ -259,7 +258,8 @@ export class ExplorePage extends LitElement {
       }
       return;
     }
-    if (name.includes('show')) this[name] = current === 'true';
+    // @ts-ignore
+    if (name.includes('show')) this[name] = (current as string) === 'true';
   }
 
   private async makeQuery() {
@@ -292,8 +292,7 @@ export class ExplorePage extends LitElement {
 
   _renderTiles() {
     return this.data?.children.map(({data: post}) => {
-      const isLarge = post.title.length > 90;
-      const imgUrl = getImageUrl(post, isLarge);
+      const imgUrl = getImageUrl(post);
       const isMedia = !!imgUrl;
 
       if (isMedia) return this._renderMediaTile(post);
@@ -302,7 +301,7 @@ export class ExplorePage extends LitElement {
   }
   _renderMediaTile(post: Post) {
     const isLarge = post.title.length > 90;
-    const imgUrl = getImageUrl(post, isLarge);
+    const imgUrl = getImageUrl(post);
     const imgStyles = {
       backgroundImage: `url('${imgUrl}')`,
     };
@@ -386,13 +385,13 @@ function getAspectRatio(post: Post) {
   return image.width / image.height;
 }
 
-export function getImageUrl(post: Post, isLarge = false) {
+export function getImageUrl(post: Post) {
   const isImage = post.post_hint === 'image';
   if (isImage) return post.url;
-  return getPreview(post, isLarge)?.url ?? '';
+  return getPreview(post)?.url ?? '';
 }
 
-function getPreview(post: Post, isLarge = false): PreviewImage | undefined {
+function getPreview(post: Post): PreviewImage | undefined {
   const isImage = post.post_hint === 'image';
   if (isImage) return post.preview?.images[0].source;
 

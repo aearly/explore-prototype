@@ -129,7 +129,7 @@ export class SubredditView extends LitElement {
         .filter((c) => !c.data.stickied)
         .map((c) => {
           const post: Post = c.data;
-          const imgUrl = getImageUrl(post, true);
+          const imgUrl = getImageUrl(post);
           return html`<a
             class="post"
             target="_blank"
