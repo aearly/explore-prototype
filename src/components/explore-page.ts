@@ -50,9 +50,9 @@ export class ExplorePage extends LitElement {
 
   constructor() {
     super();
-    this.showtitle = false;
-    this.showsubreddit = false;
-    this.showshim = false;
+    this.showtitle = true;
+    this.showsubreddit = true;
+    this.showshim = true;
   }
 
   connectedCallback() {

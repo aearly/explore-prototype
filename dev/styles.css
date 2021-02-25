@@ -76,6 +76,12 @@ button.pill:active {
   background-color: #ddd;
 }
 
+label {
+  display: block;
+  width: 405px;
+  margin: 0 auto;
+}
+
 ::-webkit-scrollbar {
   width: 5px;
   position: relative;
