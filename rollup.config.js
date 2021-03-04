@@ -18,8 +18,6 @@ import resolve from 'rollup-plugin-node-resolve';
 import commonJs from 'rollup-plugin-commonjs';
 import replace from '@rollup/plugin-replace';
 
-import * as react from 'react';
-
 export default {
   input: 'lib/index.js',
   output: {
@@ -49,7 +47,7 @@ export default {
     }),
     commonJs({
       namedExports: {
-        react: Object.keys(react),
+        //react: Object.keys(react),
       },
     }),
   ],

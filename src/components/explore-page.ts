@@ -1,8 +1,17 @@
-import {LitElement, html, customElement, property, css} from 'lit-element';
+import {
+  LitElement,
+  html,
+  customElement,
+  property,
+  css,
+  unsafeCSS,
+} from 'lit-element';
 import {unsafeHTML} from 'lit-html/directives/unsafe-html';
 import {classMap} from 'lit-html/directives/class-map';
 import {ListingData, Post, PreviewImage} from './types';
 import './subreddit-view';
+
+const GRID_GRANULARITY = 4;
 
 const TOPICS: Record<string, string> = {
   gaming:
@@ -26,8 +35,6 @@ const TOPICS: Record<string, string> = {
     'beautytalkph+houseplants+aww+ShinyPokemon+cats+gardening+FreeKarma4U+gaming',
 };
 
-const RATIO_THRESHOLD = 1.5;
-
 @customElement('explore-page')
 export class ExplorePage extends LitElement {
   @property({attribute: true, type: String})
@@ -47,6 +54,8 @@ export class ExplorePage extends LitElement {
 
   @property({attribute: true, type: Boolean})
   showshim: boolean;
+
+  largeThreshold = 5000;
 
   constructor() {
     super();
@@ -106,7 +115,7 @@ export class ExplorePage extends LitElement {
       .grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        grid-auto-rows: calc(var(--tile-size) + 16px);
+        grid-auto-rows: calc((var(--tile-size) + 16px) / ${GRID_GRANULARITY});
         background-color: #fff;
         padding: 8px;
         /* grid-gap: 16px; */
@@ -120,14 +129,16 @@ export class ExplorePage extends LitElement {
         border-radius: 16px;
         margin: 8px;
         color: white;
+        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+
+        grid-row-end: span 4;
       }
 
       .post-tile-text {
         display: flex;
         flex-direction: column;
         padding: 16px;
-        font-weight: bold;
-        font-size: 14px;
+        font-size: 12px;
         line-height: 17px;
         text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25);
         text-overflow: ellipsis;
@@ -152,7 +163,7 @@ export class ExplorePage extends LitElement {
         background-repeat: no-repeat;
         background-size: cover;
         background-position: top center;
-        height: var(--tile-size);
+        /* height: var(--tile-size); */
         position: absolute;
         top: 0;
         left: 0;
@@ -191,8 +202,8 @@ export class ExplorePage extends LitElement {
 
       .subreddit {
         font-weight: normal;
-        line-height: 1em;
-        margin-bottom: 16px;
+        line-height: 1.2em;
+        margin-top: 16px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -208,6 +219,7 @@ export class ExplorePage extends LitElement {
       }
       .post-tile-title {
         margin: 0;
+        font-weight: 600;
         flex: none;
         vertical-align: bottom;
       }
@@ -217,29 +229,21 @@ export class ExplorePage extends LitElement {
         font-weight: normal;
       }
 
-      .post-tile-wide {
-        grid-column-end: span 2;
-        grid-row-end: span 1;
-      }
-      .post-tile-tall {
-        grid-column-end: span 1;
-        grid-row-end: span 2;
-      }
-      .post-tile-tall .post-tile-image {
-        height: calc(var(--tile-size) * 2 + 16px);
-      }
       .post-tile-large {
         grid-column-end: span 2;
-        grid-row-end: span 2;
+        /* grid-row-end: span 16; */
       }
-      .post-tile-large .post-tile-image {
-        height: calc(var(--tile-size) * 2 + 16px);
-      }
-      .post-tile-wide .post-tile-title,
-      .post-tile-large .post-tile-title {
-        font-size: 18px;
-        line-height: 21px;
-      }
+      ${unsafeCSS(
+        range(GRID_GRANULARITY * 4)
+          .map(
+            (num) => `
+          .span${num} {
+            grid-row-end: span ${num};
+          }
+        `
+          )
+          .join('\n')
+      )}
     `;
   }
 
@@ -258,8 +262,11 @@ export class ExplorePage extends LitElement {
       }
       return;
     }
-    // @ts-ignore
-    if (name.includes('show')) this[name] = (current as string) === 'true';
+    if (name.includes('show')) {
+      // @ts-ignore
+      this[name] = (current as string) === 'true';
+      this.showshim = this.showsubreddit || this.showtitle;
+    }
   }
 
   private async makeQuery() {
@@ -300,20 +307,26 @@ export class ExplorePage extends LitElement {
     });
   }
   _renderMediaTile(post: Post) {
-    const isLarge = post.title.length > 90;
+    //const isLarge = post.title.length > 90;
+    const isLarge = post.ups > this.largeThreshold;
     const imgUrl = getImageUrl(post);
     const imgStyles = {
       backgroundImage: `url('${imgUrl}')`,
     };
 
     const ratio = getAspectRatio(post);
+    const rowSpan = Math.round(ratio * GRID_GRANULARITY) * (isLarge ? 2 : 1);
+    const spanClass = `span${clamp(
+      rowSpan,
+      Math.round(GRID_GRANULARITY / 3),
+      GRID_GRANULARITY * 2 * (isLarge ? 2 : 1)
+    )}`;
 
     return html`<div
       @click=${() => this.onTileClick(post.subreddit)}
       class=${classMap({
         'post-tile': true,
-        'post-tile-wide': !isLarge && ratio >= RATIO_THRESHOLD,
-        'post-tile-tall': !isLarge && ratio <= 1 / RATIO_THRESHOLD,
+        [spanClass]: true,
         'post-tile-large': isLarge,
       })}
     >
@@ -327,11 +340,12 @@ export class ExplorePage extends LitElement {
   }
 
   _renderTextTile(post: Post) {
-    const isLarge = post.title.length > 90;
+    const isLarge = post.ups > this.largeThreshold;
     return html`<div
       @click=${() => this.onTileClick(post.subreddit)}
       class=${classMap({
         'post-tile': true,
+        span6: true,
         'post-tile-large': isLarge,
         'post-text-only': true,
       })}
@@ -341,22 +355,13 @@ export class ExplorePage extends LitElement {
   }
 
   _renderText(post: Post, isImage = false) {
-    const text = post.selftext;
+    const text = htmlDecode(post.selftext_html ?? '') ?? '';
     return html`<div
       class=${classMap({
         'post-tile-text': true,
         shim: isImage && this.showshim,
       })}
     >
-      <div
-        class=${classMap({
-          subreddit: true,
-          hidden: isImage && !this.showsubreddit,
-        })}
-      >
-        r/${post.subreddit}
-      </div>
-      <div class="spacer"></div>
       <h3
         class=${classMap({
           'post-tile-title': true,
@@ -372,9 +377,18 @@ export class ExplorePage extends LitElement {
               hidden: isImage && !this.showtitle,
             })}
           >
-            ${unsafeHTML(text.slice(0, 200))}${text.length > 200 ? '...' : ''}
+            ${unsafeHTML(text.slice(0, 200))}
           </div>`
         : ''}
+      <div class="spacer"></div>
+      <div
+        class=${classMap({
+          subreddit: true,
+          hidden: isImage && !this.showsubreddit,
+        })}
+      >
+        r/${post.subreddit}
+      </div>
     </div>`;
   }
 }
@@ -382,7 +396,7 @@ export class ExplorePage extends LitElement {
 function getAspectRatio(post: Post) {
   const image = getPreview(post);
   if (!image) return 1;
-  return image.width / image.height;
+  return image.height / image.width;
 }
 
 export function getImageUrl(post: Post) {
@@ -403,4 +417,19 @@ function getPreview(post: Post): PreviewImage | undefined {
     ? previews[2] ?? previews[1] ?? previews[0]
     : previews[1] ?? previews[0];
   return resolution; */
+}
+
+function htmlDecode(input: string) {
+  var doc = new DOMParser().parseFromString(input, 'text/html');
+  return doc.documentElement.textContent;
+}
+
+function clamp(val: number, min: number, max: number) {
+  return Math.min(Math.max(val, min), max);
+}
+
+function range(num: number): number[] {
+  const arr = Array(num);
+  for (var i = 0; i < num; i++) arr[i] = i;
+  return arr;
 }

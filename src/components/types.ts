@@ -19,6 +19,7 @@ export interface Post {
   thumbnail: string;
   pinned: boolean;
   stickied: boolean;
+  ups: number;
 }
 
 export interface PreviewImage {
