@@ -1,6 +1,7 @@
 import {LitElement, html, customElement, property, css} from 'lit-element';
 import {unsafeHTML} from 'lit-html/directives/unsafe-html';
-import {getImageUrl} from './explore-page';
+import {classMap} from 'lit-html/directives/class-map';
+import {getImageUrl, htmlDecode} from './helpers';
 import {ListingData, Post} from './types';
 
 @customElement('subreddit-view')
@@ -9,6 +10,8 @@ export class SubredditView extends LitElement {
   subreddit: string | undefined;
   @property({attribute: true, type: Object})
   data: ListingData | undefined;
+  @property({attribute: true, type: Object})
+  about: any | undefined;
 
   constructor() {
     super();
@@ -22,6 +25,7 @@ export class SubredditView extends LitElement {
       if (prev !== curr) {
         this.subreddit = curr as string;
         this.makeQuery();
+        this.fetchAbout();
       }
     }
   }
@@ -39,6 +43,20 @@ export class SubredditView extends LitElement {
     this.data = body.data;
     console.log(this.data?.children.map((c) => c.data.title));
   }
+
+  private async fetchAbout() {
+    this.about = undefined;
+    if (!this.subreddit) return;
+    const resp = await fetch(
+      `https://www.reddit.com/r/${this.subreddit}/about.json`,
+      {
+        mode: 'cors',
+      }
+    );
+    const body = await resp.json();
+    this.about = body.data;
+  }
+
   static get styles() {
     return css`
       .posts {
@@ -65,6 +83,9 @@ export class SubredditView extends LitElement {
         margin-right: 4px;
         border-radius: 50px;
         border: 1px solid rgba(0, 0, 0, 0.2);
+      }
+      .no-icon {
+        background-color: blueviolet;
       }
       .sr {
         flex: auto;
@@ -124,6 +145,8 @@ export class SubredditView extends LitElement {
   render() {
     if (!this.data) return null;
     console.log(this.data);
+    const iconUrl =
+      this.about?.icon_img || 'https://www.redditstatic.com/icon_planet_2x.png';
     return html`<div class="posts">
       ${this.data.children
         .filter((c) => !c.data.stickied)
@@ -136,7 +159,13 @@ export class SubredditView extends LitElement {
             href="https://reddit.com/${post.id}"
           >
             <div class="post-top">
-              <img class="sr-icon" />
+              <img
+                class=${classMap({
+                  'sr-icon': true,
+                  'no-icon': !this.about?.icon_img,
+                })}
+                src="${iconUrl}"
+              />
               <div class="sr">
                 r/${post.subreddit}<br /><span class="author"
                   >u/${post.author}</span
@@ -149,7 +178,7 @@ export class SubredditView extends LitElement {
             </div>
             ${post.selftext_html
               ? html`<div class="selftext">
-                  ${unsafeHTML(post.selftext)}
+                  ${unsafeHTML(htmlDecode(post.selftext_html))}
                 </div>`
               : ''}
             ${imgUrl ? unsafeHTML(`<img class="media" src=${imgUrl} />`) : ''}

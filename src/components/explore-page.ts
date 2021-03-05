@@ -1,10 +1,17 @@
 import {LitElement, html, customElement, property, query} from 'lit-element';
 import {unsafeHTML} from 'lit-html/directives/unsafe-html';
 import {classMap} from 'lit-html/directives/class-map';
-import {GRID_GRANULARITY, ListingData, Post, PreviewImage} from './types';
+import {GRID_GRANULARITY, ListingData, Post} from './types';
 import './subreddit-view';
+import './tile-text';
 
 import exploreStyles from './explore-styles';
+import {
+  firstMarkdownElem,
+  getAspectRatio,
+  getImageUrl,
+  htmlDecode,
+} from './helpers';
 
 const TOPICS: Record<string, string> = {
   gaming:
@@ -13,7 +20,7 @@ const TOPICS: Record<string, string> = {
     'DotA2+pcmasterrace+GirlGamers+gamecollecting+IndieGaming+Fallout+Games+' +
     'nintendo+SuggestALaptop+Steam+Competitiveoverwatch+wow+funny',
   music:
-    '"Music+Vaporwave+Guitar+MusicEd+WeAreTheMusicMakers+indieheads+Metal+' +
+    'Music+Vaporwave+Guitar+MusicEd+WeAreTheMusicMakers+indieheads+Metal+' +
     'LetsTalkMusic+DeepIntoYouTube+musictheory+Metalcore+CasualConversation+' +
     'ListeningHeads+AskReddit+woahdude+composer+poppunkers+anime+' +
     'ThisIsOurMusic+unpopularopinion+AdviceAnimals+BABYMETAL+gaming+EDM+technology"',
@@ -108,6 +115,7 @@ export class ExplorePage extends LitElement {
       this.topic = current as string;
       if (this.topic) {
         this.posts = [];
+        this.afterId = undefined;
         this.subreddit = undefined;
         this.makeQuery();
       }
@@ -139,7 +147,9 @@ export class ExplorePage extends LitElement {
     this.data = body.data;
     const posts = this.data?.children.map((c) => c.data) ?? [];
     console.log(posts);
-    this.posts = this.posts.concat(posts);
+    this.posts = this.posts.concat(
+      posts.filter((post) => post.post_hint !== 'link')
+    );
     this.afterId = body.data.after;
   }
 
@@ -149,10 +159,11 @@ export class ExplorePage extends LitElement {
         subreddit=${this.subreddit}
       ></subreddit-view>`;
     }
+    //if (!this.posts.length) return html`<div class="grid"></div>`;
     return html`
       <div class="grid">
         ${this._renderTiles()}
-        <div class="loader"></div>
+        ${this.posts.length === 0 ? '' : this._renderSpacers()}
       </div>
     `;
   }
@@ -165,6 +176,15 @@ export class ExplorePage extends LitElement {
       if (isMedia) return this._renderMediaTile(post);
       return this._renderTextTile(post);
     });
+  }
+
+  _renderSpacers() {
+    return html`<div class="post-tile post-text-only span3"></div>
+      <div class="post-tile post-text-only span2"></div>
+      ${Array(4)
+        .fill(1)
+        .map(() => html`<div class="post-tile post-text-only span1"></div>`)}
+      <div class="loader"></div>`;
   }
   _renderMediaTile(post: Post) {
     //const isLarge = post.title.length > 90;
@@ -217,7 +237,11 @@ export class ExplorePage extends LitElement {
   }
 
   _renderText(post: Post, isImage = false) {
-    const text = htmlDecode(post.selftext_html ?? '') ?? '';
+    return html`<tile-text .post=${post} isImage=${isImage} />`;
+  }
+  _renderTextOld(post: Post, isImage = false) {
+    const text =
+      firstMarkdownElem(htmlDecode(post.selftext_html ?? '') ?? '') ?? '';
     return html`<div
       class=${classMap({
         'post-tile-text': true,
@@ -253,37 +277,6 @@ export class ExplorePage extends LitElement {
       </div>
     </div>`;
   }
-}
-
-function getAspectRatio(post: Post) {
-  const image = getPreview(post);
-  if (!image) return 1;
-  return image.height / image.width;
-}
-
-export function getImageUrl(post: Post) {
-  const isImage = post.post_hint === 'image';
-  if (isImage) return post.url;
-  return getPreview(post)?.url ?? '';
-}
-
-function getPreview(post: Post): PreviewImage | undefined {
-  const isImage = post.post_hint === 'image';
-  if (isImage) return post.preview?.images[0].source;
-
-  const previews = post.preview?.images[0].resolutions;
-  if (!previews) return;
-
-  return post.preview?.images[0].source;
-  /* const resolution = isLarge
-    ? previews[2] ?? previews[1] ?? previews[0]
-    : previews[1] ?? previews[0];
-  return resolution; */
-}
-
-function htmlDecode(input: string) {
-  var doc = new DOMParser().parseFromString(input, 'text/html');
-  return doc.documentElement.textContent;
 }
 
 function clamp(val: number, min: number, max: number) {

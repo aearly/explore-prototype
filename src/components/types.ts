@@ -17,16 +17,43 @@ export interface Post {
     }[];
     source: {url: string};
   } | null;
+  gallery_data?: {items: MediaItem[]};
   thumbnail: string;
   pinned: boolean;
   stickied: boolean;
   ups: number;
 }
 
+export interface GalleryPost extends Post {
+  gallery_data: {items: MediaItem[]};
+  media_metadata: Record<string, MediaInfo>;
+}
+
 export interface PreviewImage {
   height: number;
   width: number;
   url: string;
+}
+
+export interface MediaItem {
+  id: string;
+  media_id: string;
+}
+
+export interface MediaInfo {
+  e: string;
+  id: string;
+  /** content type */
+  m: string;
+  /** preview sizes */
+  p: MediaImage[];
+  s: MediaImage;
+}
+
+export interface MediaImage {
+  u: string;
+  x: number;
+  y: number;
 }
 
 export interface ListingData {
