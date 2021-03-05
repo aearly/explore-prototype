@@ -84,20 +84,22 @@ label {
 
 ::-webkit-scrollbar {
   width: 5px;
-  position: relative;
+  position: fixed;
   right: 3px;
+  background-color: white;
 }
 
 /* Track */
 ::-webkit-scrollbar-track {
-  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.3);
-  border-radius: 5px;
+  /* box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.3);
+  border-radius: 5px; */
 }
 
 /* Handle */
 ::-webkit-scrollbar-thumb {
   border-radius: 5px;
   background: rgba(4, 4, 4, 0.5);
+  transform: translateX(-3px);
 }
 ::-webkit-scrollbar-thumb:window-inactive {
   background: rgba(4, 4, 4, 0.1);

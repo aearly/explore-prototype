@@ -1,17 +1,10 @@
-import {
-  LitElement,
-  html,
-  customElement,
-  property,
-  css,
-  unsafeCSS,
-} from 'lit-element';
+import {LitElement, html, customElement, property, query} from 'lit-element';
 import {unsafeHTML} from 'lit-html/directives/unsafe-html';
 import {classMap} from 'lit-html/directives/class-map';
-import {ListingData, Post, PreviewImage} from './types';
+import {GRID_GRANULARITY, ListingData, Post, PreviewImage} from './types';
 import './subreddit-view';
 
-const GRID_GRANULARITY = 4;
+import exploreStyles from './explore-styles';
 
 const TOPICS: Record<string, string> = {
   gaming:
@@ -45,23 +38,31 @@ export class ExplorePage extends LitElement {
 
   @property({attribute: true, type: Object})
   data: ListingData | undefined;
+  pending = false;
+  posts: Post[];
+  afterId: string | undefined;
+
+  observer: IntersectionObserver | undefined;
 
   @property({attribute: true, type: Boolean})
-  showtitle: boolean;
+  showtitle = true;
 
   @property({attribute: true, type: Boolean})
-  showsubreddit: boolean;
+  showsubreddit = true;
 
   @property({attribute: true, type: Boolean})
-  showshim: boolean;
+  showshim = true;
 
-  largeThreshold = 5000;
+  largeKarmaThreshold = 20000;
+  largeCommentThreshold = 100;
+
+  @query('.loader')
+  _loader: HTMLElement | undefined;
+  loaderRegistered = false;
 
   constructor() {
     super();
-    this.showtitle = true;
-    this.showsubreddit = true;
-    this.showshim = true;
+    this.posts = [];
   }
 
   connectedCallback() {
@@ -69,182 +70,31 @@ export class ExplorePage extends LitElement {
     this.makeQuery();
   }
 
+  updated() {
+    if (!this.observer) {
+      this.observer = new IntersectionObserver(
+        (entries) => {
+          console.log({entries});
+          if (!entries[0].isIntersecting) return;
+          console.log(`load more ${this.afterId}`);
+          this._loader && this.observer?.unobserve(this._loader);
+          if (!this.pending) this.makeQuery();
+        },
+        {
+          root: document.querySelector('main'),
+          rootMargin: '100px',
+        }
+      );
+    }
+    if (this._loader && this.afterId) {
+      setTimeout(() => {
+        this._loader && this.observer?.observe(this._loader);
+      }, 1000);
+    }
+  }
+
   static get styles() {
-    return css`
-      :host {
-        --tile-size: 156px;
-        --gradient-1: linear-gradient(
-          97.51deg,
-          #ff4400 -7.08%,
-          #ffb330 116.57%
-        );
-        --gradient-2: linear-gradient(89.94deg, #c274f0 0%, #f14fb0 100%);
-        --gradient-3: linear-gradient(
-          89.94deg,
-          #51b9ff 0%,
-          #7785ff 52.6%,
-          #b279ff 73.96%,
-          #ff81ed 100%
-        );
-        --gradient-4: linear-gradient(
-          97.51deg,
-          #048de9 -7.08%,
-          #0fc0d2 116.57%
-        );
-        --gradient-5: linear-gradient(
-          71.53deg,
-          #c30d47 20.89%,
-          #fe4301 121.62%
-        );
-        --gradient-6: linear-gradient(
-          91.64deg,
-          #f5441f -10.49%,
-          #fc7519 109.75%
-        );
-        --gradient-7: linear-gradient(
-          91.64deg,
-          #5b3dc1 -10.49%,
-          #aa48c0 109.75%
-        );
-        --gradient-8: linear-gradient(
-          91.64deg,
-          #3353b8 -10.49%,
-          #685cfc 109.75%
-        );
-      }
-      .grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        grid-auto-rows: calc((var(--tile-size) + 16px) / ${GRID_GRANULARITY});
-        background-color: #fff;
-        padding: 8px;
-        /* grid-gap: 16px; */
-        grid-auto-flow: dense;
-      }
-
-      .post-tile {
-        overflow: hidden;
-        position: relative;
-        cursor: pointer;
-        border-radius: 16px;
-        margin: 8px;
-        color: white;
-        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
-
-        grid-row-end: span 4;
-      }
-
-      .post-tile-text {
-        display: flex;
-        flex-direction: column;
-        padding: 16px;
-        font-size: 12px;
-        line-height: 17px;
-        text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25);
-        text-overflow: ellipsis;
-        margin: 0;
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-      }
-
-      .shim {
-        background-color: rgba(0, 0, 0, 0.25);
-      }
-
-      .post-text-only .post-tile-text {
-        box-shadow: unset;
-        background-color: transparent;
-      }
-
-      .post-tile-image {
-        background-repeat: no-repeat;
-        background-size: cover;
-        background-position: top center;
-        /* height: var(--tile-size); */
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-      }
-      .post-text-only {
-        background-image: var(--gradient-1);
-      }
-
-      .post-tile:nth-child(8n).post-text-only {
-        background-image: var(--gradient-2);
-      }
-      .post-tile:nth-child(8n + 1).post-text-only {
-        background-image: var(--gradient-3);
-      }
-      .post-tile:nth-child(8n + 2).post-text-only {
-        background-image: var(--gradient-4);
-      }
-      .post-tile:nth-child(8n + 3).post-text-only {
-        background-image: var(--gradient-5);
-      }
-      .post-tile:nth-child(8n + 4).post-text-only {
-        background-image: var(--gradient-6);
-      }
-      .post-tile:nth-child(8n + 5).post-text-only {
-        background-image: var(--gradient-7);
-      }
-      .post-tile:nth-child(8n + 6).post-text-only {
-        background-image: var(--gradient-8);
-      }
-
-      .hidden {
-        display: none;
-      }
-
-      .subreddit {
-        font-weight: normal;
-        line-height: 1.2em;
-        margin-top: 16px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        flex: none;
-      }
-
-      .post-text-only .post-tile-text .post-tile-title {
-        text-shadow: none;
-      }
-
-      .spacer {
-        flex: auto;
-      }
-      .post-tile-title {
-        margin: 0;
-        font-weight: 600;
-        flex: none;
-        vertical-align: bottom;
-      }
-
-      .post-tile-body {
-        margin-top: 8px;
-        font-weight: normal;
-      }
-
-      .post-tile-large {
-        grid-column-end: span 2;
-        /* grid-row-end: span 16; */
-      }
-      ${unsafeCSS(
-        range(GRID_GRANULARITY * 4)
-          .map(
-            (num) => `
-          .span${num} {
-            grid-row-end: span ${num};
-          }
-        `
-          )
-          .join('\n')
-      )}
-    `;
+    return exploreStyles();
   }
 
   onTileClick(subreddit: string) {
@@ -257,6 +107,7 @@ export class ExplorePage extends LitElement {
     if (name === 'topic' && old !== current) {
       this.topic = current as string;
       if (this.topic) {
+        this.posts = [];
         this.subreddit = undefined;
         this.makeQuery();
       }
@@ -271,17 +122,25 @@ export class ExplorePage extends LitElement {
 
   private async makeQuery() {
     if (!this.topic) return;
+    if (this.pending) return;
     this.data = undefined;
     console.log(this.topic);
+    this.pending = true;
     const resp = await fetch(
-      `https://www.reddit.com/r/${TOPICS[this.topic]}.json`,
+      `https://www.reddit.com/r/${TOPICS[this.topic]}.json?after=${
+        this.afterId ?? ''
+      }`,
       {
         mode: 'cors',
       }
     );
     const body = await resp.json();
+    this.pending = false;
     this.data = body.data;
-    console.log(this.data?.children.map((c) => c.data));
+    const posts = this.data?.children.map((c) => c.data) ?? [];
+    console.log(posts);
+    this.posts = this.posts.concat(posts);
+    this.afterId = body.data.after;
   }
 
   render() {
@@ -293,12 +152,13 @@ export class ExplorePage extends LitElement {
     return html`
       <div class="grid">
         ${this._renderTiles()}
+        <div class="loader"></div>
       </div>
     `;
   }
 
   _renderTiles() {
-    return this.data?.children.map(({data: post}) => {
+    return this.posts.map((post) => {
       const imgUrl = getImageUrl(post);
       const isMedia = !!imgUrl;
 
@@ -308,7 +168,8 @@ export class ExplorePage extends LitElement {
   }
   _renderMediaTile(post: Post) {
     //const isLarge = post.title.length > 90;
-    const isLarge = post.ups > this.largeThreshold;
+    const isLarge =
+      post.ups > this.largeKarmaThreshold || post.num_comments / post.ups > 0.1;
     const imgUrl = getImageUrl(post);
     const imgStyles = {
       backgroundImage: `url('${imgUrl}')`,
@@ -340,7 +201,8 @@ export class ExplorePage extends LitElement {
   }
 
   _renderTextTile(post: Post) {
-    const isLarge = post.ups > this.largeThreshold;
+    const isLarge =
+      post.ups > this.largeKarmaThreshold || post.title.length > 100;
     return html`<div
       @click=${() => this.onTileClick(post.subreddit)}
       class=${classMap({
@@ -426,10 +288,4 @@ function htmlDecode(input: string) {
 
 function clamp(val: number, min: number, max: number) {
   return Math.min(Math.max(val, min), max);
-}
-
-function range(num: number): number[] {
-  const arr = Array(num);
-  for (var i = 0; i < num; i++) arr[i] = i;
-  return arr;
 }

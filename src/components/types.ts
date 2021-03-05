@@ -3,6 +3,7 @@ export interface Post {
   title: string;
   post_hint: string;
   url: string;
+  num_comments: number;
   selftext: string;
   selftext_html: string;
   author: string;
@@ -38,3 +39,5 @@ export interface ListingData {
   dist: number;
   modhash: string;
 }
+
+export const GRID_GRANULARITY = 4;
