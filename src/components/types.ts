@@ -18,6 +18,11 @@ export interface Post {
     source: {url: string};
   } | null;
   gallery_data?: {items: MediaItem[]};
+  media?: {
+    reddit_video: {
+      fallback_url: string;
+    };
+  };
   thumbnail: string;
   pinned: boolean;
   stickied: boolean;

@@ -3,7 +3,7 @@ import {unsafeHTML} from 'lit-html/directives/unsafe-html';
 import {classMap} from 'lit-html/directives/class-map';
 import {Post} from './types';
 // @ts-ignore
-import {clamp} from '@clampy-js/clampy';
+import {clamp} from '../vendor/clampy';
 
 import exploreStyles from './explore-styles';
 import {firstMarkdownElem, htmlDecode} from './helpers';
@@ -25,17 +25,25 @@ export class TileText extends LitElement {
   showshim = true;
   showtitle = true;
   showsubreddit = true;
+  isClamped = false;
 
   static get styles() {
     return exploreStyles();
   }
 
   updated() {
-    if (this.titleElem) {
-      clamp(this.titleElem, {clamp: 3});
+    if (this.titleElem && !this.isClamped) {
+      clamp(this.titleElem, {
+        clamp: this.post?.selftext ? '3' : '5',
+        lineHeight: 17,
+      });
     }
-    if (this.bodyElem) {
-      clamp(this.bodyElem.firstElementChild, {clamp: 5});
+    if (this.bodyElem && !this.isClamped) {
+      clamp(this.bodyElem as HTMLElement, {
+        clamp: '5',
+        lineHeight: 17,
+      });
+      this.isClamped = true;
     }
   }
 
@@ -58,6 +66,7 @@ export class TileText extends LitElement {
           'post-tile-title': true,
           hidden: isImage && !this.showtitle,
         })}
+        title=${post.title}
       >
         ${htmlDecode(post.title)}
       </h3>

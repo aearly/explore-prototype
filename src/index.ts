@@ -15,9 +15,13 @@ async function main() {
   document.querySelectorAll('input.checkbox').forEach((elem) => {
     const input = elem as HTMLInputElement;
     input.addEventListener('change', () => {
-      const flag = input.id || 'showSubreddit';
-      console.log(flag);
-      explore.setAttribute(flag, input.checked + '');
+      switch (input.id) {
+        case 'showtitle': {
+          explore.setAttribute('showtitle', input.checked + '');
+          explore.setAttribute('showsubreddit', input.checked + '');
+          return;
+        }
+      }
     });
   });
 }

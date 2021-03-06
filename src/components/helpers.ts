@@ -31,6 +31,10 @@ export function isGallery(post: Post): post is GalleryPost {
   return !!post.gallery_data;
 }
 
+export function isVideo(post: Post): boolean {
+  return post.post_hint?.includes('video');
+}
+
 export function getGalleryImage(post: GalleryPost): PreviewImage | undefined {
   const firstImage = post.gallery_data.items[0];
   const metadata = post.media_metadata[firstImage.media_id];
@@ -56,7 +60,7 @@ export function firstMarkdownElem(input: string): string | undefined {
   div.innerHTML = input;
   const firstChild = div.querySelector('.md')?.firstElementChild;
   if (firstChild) {
-    return firstChild.outerHTML;
+    return firstChild.textContent?.toString();
   }
   return;
 }

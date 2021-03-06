@@ -128,6 +128,22 @@ export default () => css`
   .spacer {
     flex: auto;
   }
+
+  .gallery-icon {
+    position: absolute;
+    top: 10px;
+    right: 6px;
+    width: 28px;
+    height: 28px;
+  }
+  .video-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 20px;
+    height: 18px;
+  }
+
   .post-tile-title {
     margin: 0;
     font-weight: 600;
@@ -145,7 +161,7 @@ export default () => css`
     /* grid-row-end: span 16; */
   }
   ${unsafeCSS(
-    range(GRID_GRANULARITY * 4)
+    range(GRID_GRANULARITY * 4 + 1)
       .map(
         (num) => `
     .span${num} {

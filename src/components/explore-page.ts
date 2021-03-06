@@ -6,12 +6,7 @@ import './subreddit-view';
 import './tile-text';
 
 import exploreStyles from './explore-styles';
-import {
-  firstMarkdownElem,
-  getAspectRatio,
-  getImageUrl,
-  htmlDecode,
-} from './helpers';
+import {getAspectRatio, getImageUrl, isGallery, isVideo} from './helpers';
 
 const TOPICS: Record<string, string> = {
   gaming:
@@ -52,13 +47,13 @@ export class ExplorePage extends LitElement {
   observer: IntersectionObserver | undefined;
 
   @property({attribute: true, type: Boolean})
-  showtitle = true;
+  showtitle = false;
 
   @property({attribute: true, type: Boolean})
-  showsubreddit = true;
+  showsubreddit = false;
 
   @property({attribute: true, type: Boolean})
-  showshim = true;
+  showshim = false;
 
   largeKarmaThreshold = 20000;
   largeCommentThreshold = 100;
@@ -216,7 +211,13 @@ export class ExplorePage extends LitElement {
             `<div class="post-tile-image" style="background-image: ${imgStyles.backgroundImage}" />`
           )
         : ''}
-      ${this._renderText(post, true)}
+      ${this.showshim
+        ? html`<tile-text .post=${post} isImage></tile-text>`
+        : ''}
+      ${isGallery(post)
+        ? html`<img class="gallery-icon" src="gallery.png" />`
+        : ''}
+      ${isVideo(post) ? html`<img class="video-icon" src="video.png" />` : ''}
     </div>`;
   }
 
@@ -227,55 +228,18 @@ export class ExplorePage extends LitElement {
       @click=${() => this.onTileClick(post.subreddit)}
       class=${classMap({
         'post-tile': true,
-        span6: true,
+        span6: !!post.selftext,
+        span4: !post.selftext,
         'post-tile-large': isLarge,
         'post-text-only': true,
       })}
     >
-      ${this._renderText(post, false)}
+      <tile-text .post=${post} .isimage=${false}></tile-text>
     </div>`;
   }
 
   _renderText(post: Post, isImage = false) {
-    return html`<tile-text .post=${post} isImage=${isImage} />`;
-  }
-  _renderTextOld(post: Post, isImage = false) {
-    const text =
-      firstMarkdownElem(htmlDecode(post.selftext_html ?? '') ?? '') ?? '';
-    return html`<div
-      class=${classMap({
-        'post-tile-text': true,
-        shim: isImage && this.showshim,
-      })}
-    >
-      <h3
-        class=${classMap({
-          'post-tile-title': true,
-          hidden: isImage && !this.showtitle,
-        })}
-      >
-        ${post.title}
-      </h3>
-      ${text?.length
-        ? html`<div
-            class=${classMap({
-              'post-tile-body': true,
-              hidden: isImage && !this.showtitle,
-            })}
-          >
-            ${unsafeHTML(text.slice(0, 200))}
-          </div>`
-        : ''}
-      <div class="spacer"></div>
-      <div
-        class=${classMap({
-          subreddit: true,
-          hidden: isImage && !this.showsubreddit,
-        })}
-      >
-        r/${post.subreddit}
-      </div>
-    </div>`;
+    return html`<tile-text .post=${post} .isimage=${isImage} />`;
   }
 }
 

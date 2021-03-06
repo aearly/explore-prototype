@@ -1,7 +1,7 @@
 import {LitElement, html, customElement, property, css} from 'lit-element';
 import {unsafeHTML} from 'lit-html/directives/unsafe-html';
 import {classMap} from 'lit-html/directives/class-map';
-import {getImageUrl, htmlDecode} from './helpers';
+import {getPreview, htmlDecode} from './helpers';
 import {ListingData, Post} from './types';
 
 @customElement('subreddit-view')
@@ -139,12 +139,28 @@ export class SubredditView extends LitElement {
         display: inline-block;
         width: 305px;
       }
+
+      video {
+        width: 100%;
+      }
     `;
+  }
+
+  onMouseOver(postId: string) {
+    const videoElem = this.renderRoot.querySelector(`video#${postId}`);
+    if (videoElem) {
+      (videoElem as HTMLVideoElement).play();
+    }
+  }
+  onMouseOut(postId: string) {
+    const videoElem = this.renderRoot.querySelector(`video#${postId}`);
+    if (videoElem) {
+      (videoElem as HTMLVideoElement).pause();
+    }
   }
 
   render() {
     if (!this.data) return null;
-    console.log(this.data);
     const iconUrl =
       this.about?.icon_img || 'https://www.redditstatic.com/icon_planet_2x.png';
     return html`<div class="posts">
@@ -152,11 +168,13 @@ export class SubredditView extends LitElement {
         .filter((c) => !c.data.stickied)
         .map((c) => {
           const post: Post = c.data;
-          const imgUrl = getImageUrl(post);
+          const imgUrl = getPreview(post);
           return html`<a
             class="post"
             target="_blank"
             href="https://reddit.com/${post.id}"
+            @mouseover=${() => this.onMouseOver(post.id)}
+            @mouseout=${() => this.onMouseOut(post.id)}
           >
             <div class="post-top">
               <img
@@ -181,7 +199,15 @@ export class SubredditView extends LitElement {
                   ${unsafeHTML(htmlDecode(post.selftext_html))}
                 </div>`
               : ''}
-            ${imgUrl ? unsafeHTML(`<img class="media" src=${imgUrl} />`) : ''}
+            ${post.post_hint === 'hosted:video'
+              ? html`<video
+                  id=${post.id}
+                  src=${post.media?.reddit_video.fallback_url || ''}
+                  muted
+                ></video>`
+              : imgUrl
+              ? unsafeHTML(`<img class="media" src=${imgUrl.url} />`)
+              : ''}
             <div class="post-bottom">
               <img src="fake-post-meta.png" />
             </div>
