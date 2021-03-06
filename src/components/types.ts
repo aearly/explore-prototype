@@ -72,4 +72,24 @@ export interface ListingData {
   modhash: string;
 }
 
+export interface SubredditAbout {
+  active_user_count: number;
+  banner_background_color: string;
+  banner_background_image: string;
+  banner_img: string;
+  banner_size: string;
+  description: string;
+  description_html: string;
+  display_name: string;
+  header_img: string;
+  headerSize: [number, number];
+  icon_img: string;
+  name: string;
+  public_description: string;
+  public_description_html: string;
+  subscribers: number;
+  title: string;
+  url: string;
+}
+
 export const GRID_GRANULARITY = 4;

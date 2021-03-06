@@ -50,9 +50,10 @@ export function getGalleryImage(post: GalleryPost): PreviewImage | undefined {
   };
 }
 
-export function htmlDecode(input: string) {
+export function htmlDecode(input: string | undefined): string {
+  if (!input) return '';
   var doc = new DOMParser().parseFromString(input, 'text/html');
-  return doc.documentElement.textContent;
+  return doc.documentElement.textContent || '';
 }
 
 export function firstMarkdownElem(input: string): string | undefined {

@@ -22,9 +22,6 @@ export class TileText extends LitElement {
   @query('.post-tile-body')
   bodyElem: HTMLElement | undefined;
 
-  showshim = true;
-  showtitle = true;
-  showsubreddit = true;
   isClamped = false;
 
   static get styles() {
@@ -58,13 +55,12 @@ export class TileText extends LitElement {
     return html`<div
       class=${classMap({
         'post-tile-text': true,
-        shim: isImage && this.showshim,
+        shim: isImage,
       })}
     >
       <h3
         class=${classMap({
           'post-tile-title': true,
-          hidden: isImage && !this.showtitle,
         })}
         title=${post.title}
       >
@@ -74,7 +70,6 @@ export class TileText extends LitElement {
         ? html`<div
             class=${classMap({
               'post-tile-body': true,
-              hidden: isImage && !this.showtitle,
             })}
           >
             ${unsafeHTML(text)}
@@ -84,7 +79,6 @@ export class TileText extends LitElement {
       <div
         class=${classMap({
           subreddit: true,
-          hidden: isImage && !this.showsubreddit,
         })}
       >
         r/${post.subreddit}

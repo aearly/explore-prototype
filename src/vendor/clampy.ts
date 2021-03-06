@@ -79,7 +79,6 @@ export function clamp(
   let splitChar: string = splitOnChars[0];
   let chunks: any;
   let lastChunk: any;
-  const sty = element.style;
   const originalText = element.innerHTML;
   let clampValue = opt.clamp;
   const isCSSValue =

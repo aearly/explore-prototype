@@ -3,6 +3,7 @@ import {unsafeHTML} from 'lit-html/directives/unsafe-html';
 import {classMap} from 'lit-html/directives/class-map';
 import {GRID_GRANULARITY, ListingData, Post} from './types';
 import './subreddit-view';
+import './community-spotlight';
 import './tile-text';
 
 import exploreStyles from './explore-styles';
@@ -164,10 +165,20 @@ export class ExplorePage extends LitElement {
   }
 
   _renderTiles() {
-    return this.posts.map((post) => {
+    return this.posts.map((post, index) => {
       const imgUrl = getImageUrl(post);
       const isMedia = !!imgUrl;
 
+      if (index % 25 === 5) {
+        return html`<div
+          class="post-tile span5 post-tile-large"
+          @click=${() => this.onTileClick(post.subreddit)}
+        >
+          <community-spotlight
+            subreddit=${post.subreddit}
+          ></community-spotlight>
+        </div>`;
+      }
       if (isMedia) return this._renderMediaTile(post);
       return this._renderTextTile(post);
     });
