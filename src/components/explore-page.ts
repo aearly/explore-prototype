@@ -81,11 +81,6 @@ export class ExplorePage extends LitElement {
     return exploreStyles();
   }
 
-  onTileClick(subreddit: string) {
-    this.subreddit = subreddit;
-    this.setAttribute('topic', '');
-  }
-
   attributeChangedCallback(name: string, old: unknown, current: unknown) {
     console.log(arguments);
     if (name === 'multi' && old !== current) {
@@ -158,14 +153,14 @@ export class ExplorePage extends LitElement {
       const isMedia = !!imgUrl;
 
       if (index % 25 === 5) {
-        return html`<div
+        return html`<a
           class="post-tile span5 post-tile-large"
-          @click=${() => this.onTileClick(post.subreddit)}
+          href="#!r/${post.subreddit}"
         >
           <community-spotlight
             subreddit=${post.subreddit}
           ></community-spotlight>
-        </div>`;
+        </a>`;
       }
       if (isMedia) return this._renderMediaTile(post);
       return this._renderTextTile(post);

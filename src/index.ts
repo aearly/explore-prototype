@@ -51,6 +51,27 @@ async function main() {
     });
   });
 
+  const exploreHeader = document.querySelector(
+    '.explore-header'
+  ) as HTMLHeadingElement;
+  const subredditHeader = document.querySelector(
+    '.subreddit-header'
+  ) as HTMLHeadingElement;
+
+  function showExploreHeader() {
+    exploreHeader.classList.remove('hidden');
+    subredditHeader.classList.add('hidden');
+  }
+  function showSubredditHeader() {
+    exploreHeader.classList.add('hidden');
+    subredditHeader.classList.remove('hidden');
+  }
+
+  const backButton = document.querySelector('.back');
+  backButton?.addEventListener('click', () => {
+    window.history.go(-1);
+  });
+
   window.addEventListener('hashchange', go);
   go();
 
@@ -80,16 +101,19 @@ async function main() {
       explore.setAttribute('subreddit', '');
       explore.setAttribute('multi', multi);
       explore.setAttribute('post', '');
+      showExploreHeader();
     }
     function goMulti(multi: string) {
       explore.setAttribute('subreddit', '');
       explore.setAttribute('post', '');
       explore.setAttribute('multi', multi);
+      showExploreHeader();
     }
     function goSubreddit(subreddit: string, postId?: string) {
       explore.setAttribute('multi', '');
       explore.setAttribute('postId', postId || '');
       explore.setAttribute('subreddit', subreddit);
+      showSubredditHeader();
     }
   }
 }

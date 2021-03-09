@@ -41,6 +41,38 @@ header {
   padding: 12px;
   box-shadow: 0 0 2px 0 rgba(0, 0, 0, 0.1);
 }
+
+.subreddit-header {
+  display: flex;
+  height: 40px;
+  padding: 0;
+}
+.back {
+  flex: none;
+  cursor: pointer;
+}
+.back img {
+  width: 58px;
+  height: 40px;
+  padding: 11px 20px;
+}
+.subreddit-header h1 {
+  display: flex;
+  color: black;
+  text-align: center;
+  align-self: center;
+  flex: auto;
+  margin: 0;
+  padding: 12px;
+  padding-left: calc(50% - 90px);
+  font-size: 16px;
+  line-height: 19px;
+  font-weight: 600;
+}
+.hidden {
+  display: none;
+}
+
 main {
   flex: auto;
   overflow-y: auto;
