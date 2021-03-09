@@ -2,7 +2,7 @@ import {LitElement, html, customElement, property, css} from 'lit-element';
 import {unsafeHTML} from 'lit-html/directives/unsafe-html';
 import {classMap} from 'lit-html/directives/class-map';
 import {getPreview, htmlDecode} from './helpers';
-import {ListingData, Post} from './types';
+import {ListingData, Post, SubredditAbout} from './types';
 
 @customElement('subreddit-view')
 export class SubredditView extends LitElement {
@@ -11,7 +11,7 @@ export class SubredditView extends LitElement {
   @property({attribute: true, type: Object})
   data: ListingData | undefined;
   @property({attribute: true, type: Object})
-  about: any | undefined;
+  about: SubredditAbout | undefined;
 
   constructor() {
     super();

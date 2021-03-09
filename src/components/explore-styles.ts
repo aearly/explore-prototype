@@ -30,6 +30,7 @@ export default () => css`
   }
 
   .post-tile {
+    display: block;
     overflow: hidden;
     position: relative;
     cursor: pointer;
@@ -47,7 +48,6 @@ export default () => css`
     padding: 16px;
     font-size: 12px;
     line-height: 17px;
-    text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25);
     text-overflow: ellipsis;
     margin: 0;
     position: absolute;

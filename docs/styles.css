@@ -67,16 +67,21 @@ button {
   font-weight: bold;
 }
 
-button.pill {
+.pill {
+  display: inline-block;
+  border: none;
+  font-family: inherit;
+  font-weight: bold;
   padding: 12px 18px;
   font-size: 12px;
+  text-decoration: none;
   background-color: #ebeef0;
   color: #485b61;
   border-radius: 100px;
   margin-right: 8px;
   cursor: pointer;
 }
-button.pill:active {
+.pill:active {
   background-color: #ddd;
 }
 

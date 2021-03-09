@@ -9,35 +9,16 @@ import './tile-text';
 import exploreStyles from './explore-styles';
 import {getAspectRatio, getImageUrl, isGallery, isVideo} from './helpers';
 
-const TOPICS: Record<string, string> = {
-  gaming:
-    'gaming+halo+PS4+rpg+iosgaming+gamingsuggestions+computers+' +
-    'ShouldIbuythisgame+MechanicalKeyboards+Monitors+hardwareswap+OpTicGaming+' +
-    'DotA2+pcmasterrace+GirlGamers+gamecollecting+IndieGaming+Fallout+Games+' +
-    'nintendo+SuggestALaptop+Steam+Competitiveoverwatch+wow+funny',
-  music:
-    'Music+Vaporwave+Guitar+MusicEd+WeAreTheMusicMakers+indieheads+Metal+' +
-    'LetsTalkMusic+DeepIntoYouTube+musictheory+Metalcore+CasualConversation+' +
-    'ListeningHeads+AskReddit+woahdude+composer+poppunkers+anime+' +
-    'ThisIsOurMusic+unpopularopinion+AdviceAnimals+BABYMETAL+gaming+EDM+technology"',
-  sports:
-    'sports+soccer+todayilearned+starcraft+baseball+esports+reddevils+AskReddit+' +
-    'nfl+CFB+nba+hockey+leagueoflegends+ABraThatFits+funny+formula1+MMA+' +
-    'Patriots+gaming+cordcutters+dogecoin+granturismo+Showerthoughts+unpopularopinion+MLS',
-  beauty:
-    'beauty+AsianBeauty+OldSchoolCool+funny+MUAontheCheap+makeupexchange+' +
-    'KoreanBeauty+pics+Porsche+RandomActsofMakeup+MakeupAddiction+disney+' +
-    'BeautyAddiction+BeautyBoxes+AskWomen+succulents+BeautyGuruChatter+' +
-    'beautytalkph+houseplants+aww+ShinyPokemon+cats+gardening+FreeKarma4U+gaming',
-};
-
 @customElement('explore-page')
 export class ExplorePage extends LitElement {
   @property({attribute: true, type: String})
-  topic: string | undefined;
+  subreddit: string | undefined;
 
   @property({attribute: true, type: String})
-  subreddit: string | undefined;
+  multi: string | undefined;
+
+  @property({attribute: true, type: String})
+  postId: string | undefined;
 
   @property({attribute: true, type: Object})
   data: ListingData | undefined;
@@ -107,13 +88,22 @@ export class ExplorePage extends LitElement {
 
   attributeChangedCallback(name: string, old: unknown, current: unknown) {
     console.log(arguments);
-    if (name === 'topic' && old !== current) {
-      this.topic = current as string;
-      if (this.topic) {
+    if (name === 'multi' && old !== current) {
+      this.multi = current as string;
+      if (this.multi) {
         this.posts = [];
         this.afterId = undefined;
         this.subreddit = undefined;
         this.makeQuery();
+      }
+      return;
+    }
+    if (name === 'subreddit' && old !== current) {
+      this.subreddit = current as string;
+      if (this.subreddit) {
+        this.posts = [];
+        this.afterId = undefined;
+        this.multi = undefined;
       }
       return;
     }
@@ -125,15 +115,13 @@ export class ExplorePage extends LitElement {
   }
 
   private async makeQuery() {
-    if (!this.topic) return;
+    if (!this.multi) return;
     if (this.pending) return;
     this.data = undefined;
-    console.log(this.topic);
+    console.log(this.multi);
     this.pending = true;
     const resp = await fetch(
-      `https://www.reddit.com/r/${TOPICS[this.topic]}.json?after=${
-        this.afterId ?? ''
-      }`,
+      `https://www.reddit.com/r/${this.multi}.json?after=${this.afterId ?? ''}`,
       {
         mode: 'cors',
       }
@@ -209,8 +197,8 @@ export class ExplorePage extends LitElement {
       GRID_GRANULARITY * 2 * (isLarge ? 2 : 1)
     )}`;
 
-    return html`<div
-      @click=${() => this.onTileClick(post.subreddit)}
+    return html`<a
+      href="#!r/${post.subreddit}"
       class=${classMap({
         'post-tile': true,
         [spanClass]: true,
@@ -229,14 +217,14 @@ export class ExplorePage extends LitElement {
         ? html`<img class="gallery-icon" src="gallery.png" />`
         : ''}
       ${isVideo(post) ? html`<img class="video-icon" src="video.png" />` : ''}
-    </div>`;
+    </a>`;
   }
 
   _renderTextTile(post: Post) {
     const isLarge =
       post.ups > this.largeKarmaThreshold || post.title.length > 100;
-    return html`<div
-      @click=${() => this.onTileClick(post.subreddit)}
+    return html`<a
+      href="#!r/${post.subreddit}"
       class=${classMap({
         'post-tile': true,
         span6: !!post.selftext,
@@ -246,7 +234,7 @@ export class ExplorePage extends LitElement {
       })}
     >
       <tile-text .post=${post} .isimage=${false}></tile-text>
-    </div>`;
+    </a>`;
   }
 
   _renderText(post: Post, isImage = false) {
